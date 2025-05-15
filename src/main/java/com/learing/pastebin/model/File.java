@@ -6,11 +6,12 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @Entity
 @Table(name = "paste_bin")
-public class PasteBin {
+public class File {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long          id;
@@ -25,9 +26,13 @@ public class PasteBin {
     private String        language;
     private boolean       isPrivate;
     private boolean       isOnceView;
+    private UUID          userId;
     @CreationTimestamp
     private LocalDateTime createdAt;
     @UpdateTimestamp
     private LocalDateTime updatedAt;
     private LocalDateTime expiredAt;
+    @ManyToOne
+    @JoinColumn(name = "folderId")
+    private Folder        folder;
 }

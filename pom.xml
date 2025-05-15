@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.learing</groupId>
-    <artifactId>pasteBin</artifactId>
+    <artifactId>file</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>pasteBin</name>
-    <description>pasteBin</description>
+    <name>file</name>
+    <description>file</description>
     <url/>
     <licenses>
         <license/>

@@ -3,7 +3,7 @@ package com.learing.pastebin.dto;
 import lombok.Data;
 
 @Data
-public class PasteBinDataResponse {
+public class FileResponse {
     private String   status;
     private String   content;
     private MetaData metaData;

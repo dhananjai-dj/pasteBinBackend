@@ -1,8 +1,8 @@
 package com.learing.pastebin.service;
 
-import com.learing.pastebin.dto.PasteBinDataResponse;
-import com.learing.pastebin.dto.PasteBinRequest;
-import com.learing.pastebin.model.PasteBin;
+import com.learing.pastebin.dto.FileResponse;
+import com.learing.pastebin.dto.FileRequest;
+import com.learing.pastebin.model.File;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,31 +15,41 @@ public class UtilService {
 
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public PasteBin mapPasteBin(PasteBinRequest pasteBinRequest) {
-        PasteBin pasteBin = new PasteBin();
-        pasteBin.setKey(generateKey());
-        pasteBin.setSize(pasteBinRequest.getSize());
-        pasteBin.setType(pasteBinRequest.getType());
-        pasteBin.setTitle(pasteBinRequest.getTitle());
-        pasteBin.setPrivate(pasteBinRequest.isPrivate());
-        pasteBin.setContent(pasteBinRequest.getContent());
-        pasteBin.setOnceView(pasteBinRequest.isOnceView());
-        pasteBin.setLanguage(pasteBinRequest.getLanguage());
-        pasteBin.setPassword(hashPassword(pasteBinRequest.getPassword()));
-        pasteBin.setExpiredAt(LocalDateTime.now().plusMinutes(pasteBinRequest.getDuration()));
-        return pasteBin;
+    public File mapPasteBin(FileRequest fileRequest) {
+        File file = new File();
+        file.setKey(generateKey());
+        file.setSize(fileRequest.getSize());
+        file.setType(fileRequest.getType());
+        file.setTitle(fileRequest.getTitle());
+        file.setPrivate(fileRequest.isPrivate());
+        file.setContent(fileRequest.getContent());
+        file.setOnceView(fileRequest.isOnceView());
+        file.setLanguage(fileRequest.getLanguage());
+        file.setPassword(hashPassword(fileRequest.getPassword()));
+        file.setExpiredAt(LocalDateTime.now().plusMinutes(fileRequest.getDuration()));
+        if (fileRequest.getUserId() != null) {
+            long folderId = fileRequest.getFolderId();
+            String folderName = fileRequest.getFolderName();
+            if (folderName == null || folderName.isEmpty()) {
+                folderName = "Default";
+            }
+            file.setUserId(fileRequest.getUserId());
+            file.getFolder().setFolderId(folderId);
+            file.getFolder().setFolderName(folderName);
+        }
+        return file;
     }
 
-    public void mapPasteBinMetaData(PasteBin pasteBin, PasteBinDataResponse pasteBinDataResponse) {
-        PasteBinDataResponse.MetaData metaData = new PasteBinDataResponse.MetaData();
-        metaData.setViews(pasteBin.getViews());
-        metaData.setType(pasteBin.getType());
-        metaData.setTitle(pasteBin.getTitle());
-        metaData.setLanguage(pasteBin.getLanguage());
-        metaData.setPrivate(pasteBin.isPrivate());
-        metaData.setOnceView(pasteBin.isOnceView());
-        pasteBinDataResponse.setMetaData(metaData);
-        pasteBinDataResponse.setStatus("success");
+    public void mapPasteBinMetaData(File file, FileResponse fileResponse) {
+        FileResponse.MetaData metaData = new FileResponse.MetaData();
+        metaData.setViews(file.getViews());
+        metaData.setType(file.getType());
+        metaData.setTitle(file.getTitle());
+        metaData.setLanguage(file.getLanguage());
+        metaData.setPrivate(file.isPrivate());
+        metaData.setOnceView(file.isOnceView());
+        fileResponse.setMetaData(metaData);
+        fileResponse.setStatus("success");
     }
 
     private static String generateKey() {
