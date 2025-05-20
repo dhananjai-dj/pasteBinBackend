@@ -3,8 +3,8 @@ package com.learing.pastebin.service;
 import com.learing.pastebin.dao.FolderRepository;
 import com.learing.pastebin.dao.FileRepository;
 import com.learing.pastebin.dao.UserFolderMappingRepository;
-import com.learing.pastebin.dto.FolderResponse;
-import com.learing.pastebin.dto.UserData;
+import com.learing.pastebin.dto.response.FolderResponse;
+import com.learing.pastebin.dto.response.UserDataResponse;
 import com.learing.pastebin.model.File;
 import com.learing.pastebin.model.Folder;
 import com.learing.pastebin.model.UserFolderMapping;
@@ -51,11 +51,11 @@ public class UserDataService {
         return false;
     }
 
-    public UserData getUserData(UUID userId) {
-        UserData userData = new UserData();
+    public UserDataResponse getUserData(UUID userId) {
+        UserDataResponse userDataResponse = new UserDataResponse();
         try {
             UserFolderMapping userFolderMapping = userFolderMappingRepository.getByUserId(userId);
-            userData.setName(userFolderMapping.getUserName());
+            userDataResponse.setName(userFolderMapping.getUserName());
             List<Folder> list = userFolderMapping.getFolders();
             if (list != null && !list.isEmpty()) {
                 long totalFiles = 0L;
@@ -78,17 +78,17 @@ public class UserDataService {
                     }
                 }
 
-                userData.setTotalPastes(totalFiles);
-                userData.setFolders(folderNames);
-                userData.setTotalViews(totalViews);
-                userData.setPublicPastes(publicPastes);
-                userData.setActivePastes(activePastes);
+                userDataResponse.setTotalPastes(totalFiles);
+                userDataResponse.setFolders(folderNames);
+                userDataResponse.setTotalViews(totalViews);
+                userDataResponse.setPublicPastes(publicPastes);
+                userDataResponse.setActivePastes(activePastes);
 
             }
         } catch (Exception e) {
             logger.error("Error while getting user data {}", e.getMessage());
         }
-        return userData;
+        return userDataResponse;
     }
 
     public FolderResponse getFolderData(long folderId) {

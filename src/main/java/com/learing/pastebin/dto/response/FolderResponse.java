@@ -1,4 +1,4 @@
-package com.learing.pastebin.dto;
+package com.learing.pastebin.dto.response;
 
 import lombok.Data;
 

@@ -1,4 +1,4 @@
-package com.learing.pastebin.dto;
+package com.learing.pastebin.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.UUID;
 
 @Data
-public class FileRequest {
+public class FileUploadRequest {
     private long    size;
     private long    duration;
     private long    folderId;
