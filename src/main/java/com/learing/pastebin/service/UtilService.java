@@ -1,7 +1,7 @@
 package com.learing.pastebin.service;
 
-import com.learing.pastebin.dto.FileResponse;
-import com.learing.pastebin.dto.FileRequest;
+import com.learing.pastebin.dto.response.FileResponse;
+import com.learing.pastebin.dto.request.FileRequest;
 import com.learing.pastebin.model.File;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;

@@ -1,4 +1,4 @@
-package com.learing.pastebin.dto;
+package com.learing.pastebin.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

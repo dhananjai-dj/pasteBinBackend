@@ -1,9 +1,9 @@
 package com.learing.pastebin.service;
 
 import com.learing.pastebin.dao.FileRepository;
-import com.learing.pastebin.dto.FileResponse;
-import com.learing.pastebin.dto.FileRequest;
-import com.learing.pastebin.dto.FileSaveResponse;
+import com.learing.pastebin.dto.response.FileResponse;
+import com.learing.pastebin.dto.request.FileRequest;
+import com.learing.pastebin.dto.response.FileSaveResponse;
 import com.learing.pastebin.model.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

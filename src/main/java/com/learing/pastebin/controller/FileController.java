@@ -1,8 +1,8 @@
 package com.learing.pastebin.controller;
 
-import com.learing.pastebin.dto.FileResponse;
-import com.learing.pastebin.dto.FileRequest;
-import com.learing.pastebin.dto.FileSaveResponse;
+import com.learing.pastebin.dto.response.FileResponse;
+import com.learing.pastebin.dto.request.FileRequest;
+import com.learing.pastebin.dto.response.FileSaveResponse;
 import com.learing.pastebin.service.FileService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -1,4 +1,4 @@
-package com.learing.pastebin.dto;
+package com.learing.pastebin.dto.response;
 
 import lombok.Data;
 
@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 @Data
-public class UserData {
+public class UserDataResponse {
     private String                  name;
     private long                    totalViews;
     private long                    totalPastes;

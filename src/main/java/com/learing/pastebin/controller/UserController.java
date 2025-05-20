@@ -1,7 +1,7 @@
 package com.learing.pastebin.controller;
 
-import com.learing.pastebin.dto.FolderResponse;
-import com.learing.pastebin.dto.UserData;
+import com.learing.pastebin.dto.response.FolderResponse;
+import com.learing.pastebin.dto.response.UserDataResponse;
 import com.learing.pastebin.service.UserDataService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,7 +22,7 @@ public class UserController {
     }
 
     @GetMapping("/all-data")
-    public ResponseEntity<UserData> getAllData(@RequestParam UUID userId) {
+    public ResponseEntity<UserDataResponse> getAllData(@RequestParam UUID userId) {
         return ResponseEntity.ok(userDataService.getUserData(userId));
     }
 
