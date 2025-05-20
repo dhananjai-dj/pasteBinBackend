@@ -2,6 +2,7 @@ package com.learing.pastebin.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -32,6 +33,7 @@ public class File {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
     private LocalDateTime expiredAt;
+    @ToString.Exclude
     @ManyToOne
     @JoinColumn(name = "folderId")
     private Folder        folder;

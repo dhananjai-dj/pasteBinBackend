@@ -13,7 +13,6 @@ import java.util.UUID;
 @Service
 public class UtilService {
 
-
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public File mapPasteBin(FileUploadRequest fileUploadRequest) {
@@ -22,6 +21,7 @@ public class UtilService {
         file.setSize(fileUploadRequest.getSize());
         file.setType(fileUploadRequest.getType());
         file.setTitle(fileUploadRequest.getTitle());
+        file.setUserId(fileUploadRequest.getUserId());
         file.setPrivate(fileUploadRequest.isPrivate());
         file.setContent(fileUploadRequest.getContent());
         file.setOnceView(fileUploadRequest.isOnceView());

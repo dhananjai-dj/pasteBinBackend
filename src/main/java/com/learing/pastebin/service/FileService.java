@@ -43,8 +43,9 @@ public class FileService {
         try {
             File file = utilService.mapPasteBin(fileUploadRequest);
             if (file != null) {
-                if (file.getUserId() != null && fileUploadRequest.getFolderName() != null && !fileUploadRequest.getFolderName().isEmpty()) {
-                    saveFolderData(file, fileUploadRequest.getFolderName());
+                if (file.getUserId() != null) {
+                    Folder folder = saveFolderData(file, fileUploadRequest.getFolderName());
+                    file.setFolder(folder);
                 }
                 fileRepository.save(file);
                 fileSaveResponse.setStatus("success");
@@ -90,7 +91,8 @@ public class FileService {
         return fileResponse;
     }
 
-    public void saveFolderData(File file, String folderName) {
+    public Folder saveFolderData(File file, String folderName) {
+        Folder folder = null;
         try {
             UUID userId = file.getUserId();
             if (userId != null) {
@@ -99,16 +101,24 @@ public class FileService {
                     folderName = "Default";
                 }
                 UserFolderMapping userFolderMapping = userFolderMappingRepository.getByUserId(userId);
+                if (userFolderMapping == null) {
+                    userFolderMapping = new UserFolderMapping();
+                    userFolderMapping.setUserId(userId);
+                    userFolderMappingRepository.save(userFolderMapping);
+                }
                 List<Folder> folders = userFolderMapping.getFolders();
-                for (Folder folder : folders) {
-                    if (folder.getFolderName().equals(folderName)) {
+                for (Folder ifolder : folders) {
+                    if (ifolder.getFolderName().equals(folderName)) {
                         file.setFolder(folder);
+                        folder = ifolder;
                         break;
                     }
                 }
                 if (file.getFolder() == null) {
-                    Folder folder = new Folder();
+                    folder = new Folder();
                     folder.setFolderName(folderName);
+                    folder.getFiles().add(file);
+                    folder.setUserFolderMapping(userFolderMapping);
                     folderRepository.save(folder);
                     folders.add(folder);
                     userFolderMapping.setFolders(folders);
@@ -118,5 +128,6 @@ public class FileService {
         } catch (Exception e) {
             logger.error("Error while saving folder data {}", e.getMessage());
         }
+        return folder;
     }
 }

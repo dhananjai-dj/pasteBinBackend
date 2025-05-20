@@ -2,6 +2,7 @@ package com.learing.pastebin.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -21,8 +22,10 @@ public class Folder {
     @UpdateTimestamp
     private LocalDateTime     updatedAt;
     @ManyToOne
+    @ToString.Exclude
     @JoinColumn(name = "user_folder_mapping_id")
     private UserFolderMapping userFolderMapping;
     @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<File>        files = new ArrayList<>();
+
 }
