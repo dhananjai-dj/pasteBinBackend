@@ -1,7 +1,7 @@
 package com.learing.pastebin.controller;
 
 import com.learing.pastebin.dto.response.FileResponse;
-import com.learing.pastebin.dto.request.FileRequest;
+import com.learing.pastebin.dto.request.FileUploadRequest;
 import com.learing.pastebin.dto.response.FileSaveResponse;
 import com.learing.pastebin.service.FileService;
 import org.springframework.http.HttpStatus;
@@ -19,8 +19,8 @@ public class FileController {
     }
 
     @PostMapping("/put-data")
-    public ResponseEntity<FileSaveResponse> putData(@RequestBody FileRequest fileRequest) {
-        return ResponseEntity.ok(fileService.saveData(fileRequest));
+    public ResponseEntity<FileSaveResponse> putData(@RequestBody FileUploadRequest fileUploadRequest) {
+        return ResponseEntity.ok(fileService.saveData(fileUploadRequest));
     }
 
     @PostMapping("/get-data/{key}")

@@ -1,7 +1,7 @@
 package com.learing.pastebin.service;
 
 import com.learing.pastebin.dto.response.FileResponse;
-import com.learing.pastebin.dto.request.FileRequest;
+import com.learing.pastebin.dto.request.FileUploadRequest;
 import com.learing.pastebin.model.File;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,30 +13,21 @@ import java.util.UUID;
 @Service
 public class UtilService {
 
+
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public File mapPasteBin(FileRequest fileRequest) {
+    public File mapPasteBin(FileUploadRequest fileUploadRequest) {
         File file = new File();
         file.setKey(generateKey());
-        file.setSize(fileRequest.getSize());
-        file.setType(fileRequest.getType());
-        file.setTitle(fileRequest.getTitle());
-        file.setPrivate(fileRequest.isPrivate());
-        file.setContent(fileRequest.getContent());
-        file.setOnceView(fileRequest.isOnceView());
-        file.setLanguage(fileRequest.getLanguage());
-        file.setPassword(hashPassword(fileRequest.getPassword()));
-        file.setExpiredAt(LocalDateTime.now().plusMinutes(fileRequest.getDuration()));
-        if (fileRequest.getUserId() != null) {
-            long folderId = fileRequest.getFolderId();
-            String folderName = fileRequest.getFolderName();
-            if (folderName == null || folderName.isEmpty()) {
-                folderName = "Default";
-            }
-            file.setUserId(fileRequest.getUserId());
-            file.getFolder().setFolderId(folderId);
-            file.getFolder().setFolderName(folderName);
-        }
+        file.setSize(fileUploadRequest.getSize());
+        file.setType(fileUploadRequest.getType());
+        file.setTitle(fileUploadRequest.getTitle());
+        file.setPrivate(fileUploadRequest.isPrivate());
+        file.setContent(fileUploadRequest.getContent());
+        file.setOnceView(fileUploadRequest.isOnceView());
+        file.setLanguage(fileUploadRequest.getLanguage());
+        file.setPassword(hashPassword(fileUploadRequest.getPassword()));
+        file.setExpiredAt(LocalDateTime.now().plusMinutes(fileUploadRequest.getDuration()));
         return file;
     }
 

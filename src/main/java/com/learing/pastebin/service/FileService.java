@@ -1,39 +1,54 @@
 package com.learing.pastebin.service;
 
 import com.learing.pastebin.dao.FileRepository;
+import com.learing.pastebin.dao.FolderRepository;
+import com.learing.pastebin.dao.UserFolderMappingRepository;
 import com.learing.pastebin.dto.response.FileResponse;
-import com.learing.pastebin.dto.request.FileRequest;
+import com.learing.pastebin.dto.request.FileUploadRequest;
 import com.learing.pastebin.dto.response.FileSaveResponse;
 import com.learing.pastebin.model.File;
+import com.learing.pastebin.model.Folder;
+import com.learing.pastebin.model.UserFolderMapping;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class FileService {
 
-    private static final Logger          logger = LoggerFactory.getLogger(FileService.class);
-    private final        FileRepository  fileRepository;
-    private final        UtilService     utilService;
-    private final        UserDataService userDataService;
+    private static final Logger                      logger = LoggerFactory.getLogger(FileService.class);
+    private final        FileRepository              fileRepository;
+    private final        UtilService                 utilService;
+    private final        UserDataService             userDataService;
+    private final        UserFolderMappingRepository userFolderMappingRepository;
+    private final        FolderRepository            folderRepository;
 
-    public FileService(FileRepository fileRepository, UtilService utilService, UserDataService userDataService) {
-        this.fileRepository = fileRepository;
+    public FileService(FileRepository fileRepository, UtilService utilService, UserDataService userDataService,
+            UserFolderMappingRepository userFolderMappingRepository, FolderRepository folderRepository) {
+
         this.utilService = utilService;
         this.userDataService = userDataService;
+        this.fileRepository = fileRepository;
+        this.folderRepository = folderRepository;
+        this.userFolderMappingRepository = userFolderMappingRepository;
     }
 
-    public FileSaveResponse saveData(FileRequest fileRequest) {
+    public FileSaveResponse saveData(FileUploadRequest fileUploadRequest) {
         FileSaveResponse fileSaveResponse = new FileSaveResponse();
         fileSaveResponse.setStatus("failure");
         try {
-            File file = utilService.mapPasteBin(fileRequest);
+            File file = utilService.mapPasteBin(fileUploadRequest);
             if (file != null) {
+                if (file.getUserId() != null && fileUploadRequest.getFolderName() != null && !fileUploadRequest.getFolderName().isEmpty()) {
+                    saveFolderData(file, fileUploadRequest.getFolderName());
+                }
                 fileRepository.save(file);
                 fileSaveResponse.setStatus("success");
-                fileSaveResponse.setUrl("http://localhost:8080/paste-bin/get-data/" + file.getKey());
+                fileSaveResponse.setUrl("http://localhost:8088/paste-bin/get-data/" + file.getKey());
                 if (file.getUserId() != null) {
                     boolean isSavedInUserFolder = userDataService.saveFolderData(file);
                     if (isSavedInUserFolder) {
@@ -73,5 +88,35 @@ public class FileService {
             logger.error("Error while getting data {}", e.getMessage());
         }
         return fileResponse;
+    }
+
+    public void saveFolderData(File file, String folderName) {
+        try {
+            UUID userId = file.getUserId();
+            if (userId != null) {
+                file.setUserId(userId);
+                if (folderName != null && folderName.isEmpty()) {
+                    folderName = "Default";
+                }
+                UserFolderMapping userFolderMapping = userFolderMappingRepository.getByUserId(userId);
+                List<Folder> folders = userFolderMapping.getFolders();
+                for (Folder folder : folders) {
+                    if (folder.getFolderName().equals(folderName)) {
+                        file.setFolder(folder);
+                        break;
+                    }
+                }
+                if (file.getFolder() == null) {
+                    Folder folder = new Folder();
+                    folder.setFolderName(folderName);
+                    folderRepository.save(folder);
+                    folders.add(folder);
+                    userFolderMapping.setFolders(folders);
+                    userFolderMappingRepository.save(userFolderMapping);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error while saving folder data {}", e.getMessage());
+        }
     }
 }
