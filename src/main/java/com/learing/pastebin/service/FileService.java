@@ -1,5 +1,7 @@
 package com.learing.pastebin.service;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.learing.pastebin.dao.FileRepository;
 import com.learing.pastebin.dao.FolderRepository;
 import com.learing.pastebin.dao.UserFolderMappingRepository;
@@ -26,6 +28,7 @@ public class FileService {
     private final        UserDataService             userDataService;
     private final        UserFolderMappingRepository userFolderMappingRepository;
     private final        FolderRepository            folderRepository;
+    private final        LoadingCache<String, File>  fileCache;
 
     public FileService(FileRepository fileRepository, UtilService utilService, UserDataService userDataService,
             UserFolderMappingRepository userFolderMappingRepository, FolderRepository folderRepository) {
@@ -35,6 +38,7 @@ public class FileService {
         this.fileRepository = fileRepository;
         this.folderRepository = folderRepository;
         this.userFolderMappingRepository = userFolderMappingRepository;
+        this.fileCache = Caffeine.newBuilder().maximumSize(1000).build(fileRepository::getByKey);
     }
 
     public FileSaveResponse saveData(FileUploadRequest fileUploadRequest) {
@@ -66,7 +70,7 @@ public class FileService {
     public FileResponse getData(String key, String password) {
         FileResponse fileResponse = new FileResponse();
         try {
-            File file = fileRepository.getByKey(key);
+            File file = fileCache.get(key);
             if (file != null && utilService.validatePassword(password, file.getPassword())) {
                 LocalDateTime expiredAt = file.getExpiredAt();
                 file.setViews(file.getViews() + 1);
@@ -74,6 +78,7 @@ public class FileService {
                     fileResponse.setContent(file.getContent());
                     if (file.isOnceView()) {
                         fileRepository.delete(file);
+                        fileCache.invalidate(key);
                     } else {
                         fileRepository.save(file);
                     }
@@ -82,7 +87,7 @@ public class FileService {
                     fileResponse.setStatus("Paste bin expired");
                 }
             } else {
-                fileResponse.setStatus("Invalid password");
+                fileResponse.setStatus("File Not Found Invalid password or key");
             }
 
         } catch (Exception e) {
