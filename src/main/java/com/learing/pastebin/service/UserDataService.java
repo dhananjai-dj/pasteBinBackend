@@ -88,12 +88,10 @@ public class UserDataService {
                 long activePastes = 0L;
                 long publicPastes = 0L;
                 List<Map<Long, String>> folderNames = new ArrayList<>();
-
                 for (Folder folder : list) {
                     folderNames.add(Map.of(folder.getFolderId(), folder.getFolderName()));
                     List<File> files = folder.getFiles();
                     totalFiles += files.size();
-
                     for (File file : files) {
                         totalViews += file.getViews();
                         if (!file.isPrivate())
@@ -102,7 +100,6 @@ public class UserDataService {
                             activePastes++;
                     }
                 }
-
                 userDataResponse.setTotalPastes(totalFiles);
                 userDataResponse.setFolders(folderNames);
                 userDataResponse.setTotalViews(totalViews);
@@ -142,17 +139,6 @@ public class UserDataService {
         return folderResponse;
     }
 
-    public boolean userFolderMapping(UUID userId, long folderId) {
-        UserFolderMapping userFolderMapping = userFolderMappingLoadingCache.get(userId);
-        if (userFolderMapping == null) {
-            userFolderMapping = new UserFolderMapping();
-        }
-        userFolderMapping.setFolderId(folderId);
-        userFolderMapping.setUserId(userId);
-        userFolderMappingRepository.save(userFolderMapping);
-        return true;
-    }
-
     public String changeFolderData(long pasteBinId, long newFolderId) {
         String status = "failure";
         File file = fileRepository.findById(pasteBinId).orElse(null);
@@ -190,6 +176,17 @@ public class UserDataService {
         folderResponse.setFolderId(folderId);
         folderResponse.setStatus("Failed to update Folder Name");
         return folderResponse;
+    }
+
+    private boolean userFolderMapping(UUID userId, long folderId) {
+        UserFolderMapping userFolderMapping = userFolderMappingLoadingCache.get(userId);
+        if (userFolderMapping == null) {
+            userFolderMapping = new UserFolderMapping();
+        }
+        userFolderMapping.setFolderId(folderId);
+        userFolderMapping.setUserId(userId);
+        userFolderMappingRepository.save(userFolderMapping);
+        return true;
     }
 
 }

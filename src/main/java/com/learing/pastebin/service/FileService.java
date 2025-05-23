@@ -13,11 +13,11 @@ import com.learing.pastebin.dto.response.FileSaveResponse;
 import com.learing.pastebin.model.File;
 import com.learing.pastebin.model.Folder;
 import com.learing.pastebin.model.UserFolderMapping;
+import com.learing.pastebin.util.UtilService;
 import org.redisson.api.RBucket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -120,7 +120,7 @@ public class FileService {
         return fileResponse;
     }
 
-    public Folder saveFolderData(File file, String folderName) {
+    private Folder saveFolderData(File file, String folderName) {
         Folder folder = null;
         try {
             UUID userId = file.getUserId();
@@ -129,34 +129,46 @@ public class FileService {
                 if (folderName == null || folderName.isBlank()) {
                     folderName = "Default";
                 }
-                UserFolderMapping userFolderMapping = userFolderMappingRepository.getByUserId(userId);
-                if (userFolderMapping == null) {
-                    userFolderMapping = new UserFolderMapping();
-                    userFolderMapping.setUserId(userId);
-                    userFolderMappingRepository.save(userFolderMapping);
-                }
+                UserFolderMapping userFolderMapping = getUserFolderMapping(userId);
                 List<Folder> folders = userFolderMapping.getFolders();
-                for (Folder ifolder : folders) {
-                    if (ifolder.getFolderName().equals(folderName)) {
-                        folder = ifolder;
-                        file.setFolder(folder);
-                        break;
-                    }
-                }
+                folder = getFolder(folders, folderName);
+                file.setFolder(folder);
                 if (file.getFolder() == null) {
-                    folder = new Folder();
-                    folder.setFolderName(folderName);
-                    folder.getFiles().add(file);
-                    folder.setUserFolderMapping(userFolderMapping);
-                    folderRepository.save(folder);
-                    folders.add(folder);
-                    userFolderMapping.setFolders(folders);
-                    userFolderMappingRepository.save(userFolderMapping);
+                    createFolder(folderName, userFolderMapping, file);
                 }
             }
         } catch (Exception e) {
             logger.error("Error while saving folder data {}", e.getMessage());
         }
         return folder;
+    }
+
+    private UserFolderMapping getUserFolderMapping(UUID userId) {
+        UserFolderMapping userFolderMapping = userFolderMappingRepository.getByUserId(userId);
+        if (userFolderMapping == null) {
+            userFolderMapping = new UserFolderMapping();
+            userFolderMapping.setUserId(userId);
+            userFolderMappingRepository.save(userFolderMapping);
+        }
+        return userFolderMapping;
+    }
+
+    private Folder getFolder(List<Folder> folders, String folderName) {
+        for (Folder ifolder : folders) {
+            if (ifolder.getFolderName().equals(folderName)) {
+                return ifolder;
+            }
+        }
+        return null;
+    }
+
+    private void createFolder(String folderName, UserFolderMapping userFolderMapping, File file) {
+        Folder folder = new Folder();
+        folder.setFolderName(folderName);
+        folder.getFiles().add(file);
+        folder.setUserFolderMapping(userFolderMapping);
+        folderRepository.save(folder);
+        userFolderMapping.getFolders().add(folder);
+        userFolderMappingRepository.save(userFolderMapping);
     }
 }

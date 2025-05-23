@@ -1,4 +1,4 @@
-package com.learing.pastebin.service;
+package com.learing.pastebin.util;
 
 import com.learing.pastebin.dto.response.FileResponse;
 import com.learing.pastebin.dto.request.FileUploadRequest;
