@@ -1,5 +1,9 @@
 package com.learing.pastebin.service;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.learing.pastebin.cache.FolderCache;
+import com.learing.pastebin.cache.UserFolderMappingCache;
 import com.learing.pastebin.dao.FolderRepository;
 import com.learing.pastebin.dao.FileRepository;
 import com.learing.pastebin.dao.UserFolderMappingRepository;
@@ -8,6 +12,7 @@ import com.learing.pastebin.dto.response.UserDataResponse;
 import com.learing.pastebin.model.File;
 import com.learing.pastebin.model.Folder;
 import com.learing.pastebin.model.UserFolderMapping;
+import org.redisson.api.RBucket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -22,15 +27,35 @@ import java.util.UUID;
 public class UserDataService {
     private static final Logger logger = LoggerFactory.getLogger(UserDataService.class);
 
-    private final FolderRepository            folderRepository;
-    private final UserFolderMappingRepository userFolderMappingRepository;
-    private final FileRepository              fileRepository;
+    private final FolderRepository                      folderRepository;
+    private final UserFolderMappingRepository           userFolderMappingRepository;
+    private final FileRepository                        fileRepository;
+    private final LoadingCache<UUID, UserFolderMapping> userFolderMappingLoadingCache;
+    private final UserFolderMappingCache                userFolderMappingCache;
+    private final FolderCache                           folderCache;
+    private final LoadingCache<String, Folder>          folderLoadingCache;
 
-    public UserDataService(FolderRepository folderRepository, UserFolderMappingRepository userFolderMappingRepository,
-            FileRepository fileRepository) {
+    public UserDataService(FolderRepository folderRepository, UserFolderMappingRepository userFolderMappingRepository, FileRepository fileRepository,
+            UserFolderMappingCache userFolderMappingCache, FolderCache folderCache) {
         this.folderRepository = folderRepository;
         this.userFolderMappingRepository = userFolderMappingRepository;
         this.fileRepository = fileRepository;
+        this.userFolderMappingCache = userFolderMappingCache;
+        this.folderCache = folderCache;
+        this.folderLoadingCache = Caffeine.newBuilder().maximumSize(1000).build(key -> {
+            RBucket<Folder> bucket = this.folderCache.get(key);
+            if (bucket != null) {
+                return bucket.get();
+            }
+            return null;
+        });
+        this.userFolderMappingLoadingCache = Caffeine.newBuilder().maximumSize(1000).build(key -> {
+            RBucket<UserFolderMapping> bucket = this.userFolderMappingCache.get(key);
+            if (bucket != null) {
+                return bucket.get();
+            }
+            return null;
+        });
     }
 
     public boolean saveFolderData(File file) {
@@ -54,7 +79,7 @@ public class UserDataService {
     public UserDataResponse getUserData(UUID userId) {
         UserDataResponse userDataResponse = new UserDataResponse();
         try {
-            UserFolderMapping userFolderMapping = userFolderMappingRepository.getByUserId(userId);
+            UserFolderMapping userFolderMapping = userFolderMappingLoadingCache.get(userId);
             userDataResponse.setName(userFolderMapping.getUserName());
             List<Folder> list = userFolderMapping.getFolders();
             if (list != null && !list.isEmpty()) {
@@ -94,7 +119,7 @@ public class UserDataService {
     public FolderResponse getFolderData(long folderId) {
         FolderResponse folderResponse = new FolderResponse();
         try {
-            Folder folder = folderRepository.findByFolderId(folderId);
+            Folder folder = folderLoadingCache.get("FOLDER_" + folderId);
             if (folder != null) {
                 folderResponse.setName(folder.getFolderName());
                 folderResponse.setFolderId(folderId);
@@ -118,7 +143,7 @@ public class UserDataService {
     }
 
     public boolean userFolderMapping(UUID userId, long folderId) {
-        UserFolderMapping userFolderMapping = userFolderMappingRepository.getByUserId(userId);
+        UserFolderMapping userFolderMapping = userFolderMappingLoadingCache.get(userId);
         if (userFolderMapping == null) {
             userFolderMapping = new UserFolderMapping();
         }
@@ -132,10 +157,10 @@ public class UserDataService {
         String status = "failure";
         File file = fileRepository.findById(pasteBinId).orElse(null);
         if (file != null) {
-            Folder existingFolder = folderRepository.findByFolderId(file.getFolder().getFolderId());
+            Folder existingFolder = folderLoadingCache.get("FOLDER_" + file.getFolder().getFolderId());
             if (existingFolder != null) {
                 existingFolder.getFiles().remove(file);
-                Folder newFolder = folderRepository.findByFolderId(newFolderId);
+                Folder newFolder = folderLoadingCache.get("FOLDER_" + newFolderId);
                 if (newFolder != null) {
                     newFolder.getFiles().add(file);
                     file.getFolder().setFolderName(newFolder.getFolderName());
@@ -152,7 +177,7 @@ public class UserDataService {
 
     public FolderResponse updateFolderName(long folderId, String newName) {
         try {
-            Folder folder = folderRepository.findByFolderId(folderId);
+            Folder folder = folderLoadingCache.get("FOLDER_" + folderId);
             if (folder != null) {
                 folder.setFolderName(newName);
                 folderRepository.save(folder);

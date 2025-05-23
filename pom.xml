@@ -13,6 +13,7 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>file</name>
     <description>file</description>
+    <packaging>jar</packaging>
     <url/>
     <licenses>
         <license/>
@@ -54,6 +55,11 @@
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.learning</groupId>
+            <artifactId>objects</artifactId>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

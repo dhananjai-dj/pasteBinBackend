@@ -6,13 +6,14 @@ import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
 @Entity
 @Table(name = "paste_bin")
-public class File {
+public class File implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long          id;

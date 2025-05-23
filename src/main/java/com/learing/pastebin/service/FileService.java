@@ -2,6 +2,8 @@ package com.learing.pastebin.service;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.learing.pastebin.cache.FileCache;
+import com.learing.pastebin.cache.UserFolderMappingCache;
 import com.learing.pastebin.dao.FileRepository;
 import com.learing.pastebin.dao.FolderRepository;
 import com.learing.pastebin.dao.UserFolderMappingRepository;
@@ -11,9 +13,11 @@ import com.learing.pastebin.dto.response.FileSaveResponse;
 import com.learing.pastebin.model.File;
 import com.learing.pastebin.model.Folder;
 import com.learing.pastebin.model.UserFolderMapping;
+import org.redisson.api.RBucket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,23 +26,42 @@ import java.util.UUID;
 @Service
 public class FileService {
 
-    private static final Logger                      logger = LoggerFactory.getLogger(FileService.class);
-    private final        FileRepository              fileRepository;
-    private final        UtilService                 utilService;
-    private final        UserDataService             userDataService;
-    private final        UserFolderMappingRepository userFolderMappingRepository;
-    private final        FolderRepository            folderRepository;
-    private final        LoadingCache<String, File>  fileCache;
+    private static final Logger                                logger = LoggerFactory.getLogger(FileService.class);
+    private final        FileRepository                        fileRepository;
+    private final        UtilService                           utilService;
+    private final        UserDataService                       userDataService;
+    private final        UserFolderMappingRepository           userFolderMappingRepository;
+    private final        FolderRepository                      folderRepository;
+    private final        LoadingCache<String, File>            fileCaffeineCache;
+    private final        FileCache                             fileCache;
+    private final        LoadingCache<UUID, UserFolderMapping> userFolderMappingLoadingCache;
+    private final        UserFolderMappingCache                userFolderMappingCache;
 
     public FileService(FileRepository fileRepository, UtilService utilService, UserDataService userDataService,
-            UserFolderMappingRepository userFolderMappingRepository, FolderRepository folderRepository) {
+            UserFolderMappingRepository userFolderMappingRepository, FolderRepository folderRepository, FileCache fileCache,
+            UserFolderMappingCache userFolderMappingCache) {
 
         this.utilService = utilService;
         this.userDataService = userDataService;
         this.fileRepository = fileRepository;
         this.folderRepository = folderRepository;
         this.userFolderMappingRepository = userFolderMappingRepository;
-        this.fileCache = Caffeine.newBuilder().maximumSize(1000).build(fileRepository::getByKey);
+        this.fileCache = fileCache;
+        this.userFolderMappingCache = userFolderMappingCache;
+        this.fileCaffeineCache = Caffeine.newBuilder().maximumSize(1000).build(key -> {
+            RBucket<File> bucket = this.fileCache.get(key);
+            if (bucket != null) {
+                return bucket.get();
+            }
+            return null;
+        });
+        this.userFolderMappingLoadingCache = Caffeine.newBuilder().maximumSize(1000).build(key -> {
+            RBucket<UserFolderMapping> bucket = this.userFolderMappingCache.get(key);
+            if (bucket != null) {
+                return bucket.get();
+            }
+            return null;
+        });
     }
 
     public FileSaveResponse saveData(FileUploadRequest fileUploadRequest) {
@@ -70,7 +93,7 @@ public class FileService {
     public FileResponse getData(String key, String password) {
         FileResponse fileResponse = new FileResponse();
         try {
-            File file = fileCache.get(key);
+            File file = fileCaffeineCache.get(key);
             if (file != null && utilService.validatePassword(password, file.getPassword())) {
                 LocalDateTime expiredAt = file.getExpiredAt();
                 file.setViews(file.getViews() + 1);
@@ -78,9 +101,10 @@ public class FileService {
                     fileResponse.setContent(file.getContent());
                     if (file.isOnceView()) {
                         fileRepository.delete(file);
-                        fileCache.invalidate(key);
+                        fileCache.delete(key);
+                        fileCaffeineCache.invalidate(key);
                     } else {
-                        fileRepository.save(file);
+                        fileRepository.updateViews(file.getId(), file.getViews());
                     }
                     utilService.mapPasteBinMetaData(file, fileResponse);
                 } else {
@@ -102,7 +126,7 @@ public class FileService {
             UUID userId = file.getUserId();
             if (userId != null) {
                 file.setUserId(userId);
-                if (folderName != null && folderName.isEmpty()) {
+                if (folderName == null || folderName.isBlank()) {
                     folderName = "Default";
                 }
                 UserFolderMapping userFolderMapping = userFolderMappingRepository.getByUserId(userId);
@@ -114,8 +138,8 @@ public class FileService {
                 List<Folder> folders = userFolderMapping.getFolders();
                 for (Folder ifolder : folders) {
                     if (ifolder.getFolderName().equals(folderName)) {
-                        file.setFolder(folder);
                         folder = ifolder;
+                        file.setFolder(folder);
                         break;
                     }
                 }
